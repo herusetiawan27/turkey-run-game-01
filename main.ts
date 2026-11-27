@@ -38,9 +38,7 @@ const dossier = buildDossier(outDir, {
 });
 writeFileSync(join(outDir, 'dossier.json'), dossier);
 
-// One-line hand-in summary so a local run shows exactly what the judge gets.
-const handed = JSON.parse(dossier) as { files?: unknown[]; screenshots?: unknown[] };
-console.log(
-  `gobble-run: handed in ${handed.files?.length ?? 0} game files, ` +
-    `${handed.screenshots?.length ?? 0} screenshots -> ${outDir}`,
-);
+// One-line hand-in summary so a local run shows what the judge gets.
+// buildDossier returns bytes, so measure them rather than parsing.
+const dossierBytes = typeof dossier === 'string' ? Buffer.byteLength(dossier) : dossier.byteLength;
+console.log(`gobble-run: dossier ${dossierBytes} bytes -> ${outDir}`);
