@@ -10,7 +10,7 @@
 // Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -23,6 +23,17 @@ cpSync(join(repoDir, 'game'), join(outDir, 'game'), { recursive: true });
 
 const shotsDir = join(repoDir, 'screenshots');
 if (existsSync(shotsDir)) {
+  // Gate on the 256 KiB per-screenshot cap before copying: an oversized
+  // screenshot must fail loudly here, never be handed in silently.
+  const SHOT_MAX_BYTES = 262144;
+  for (const name of readdirSync(shotsDir)) {
+    const size = statSync(join(shotsDir, name)).size;
+    if (size > SHOT_MAX_BYTES) {
+      throw new Error(
+        `screenshot "${name}" is ${size} bytes, over the ${SHOT_MAX_BYTES}-byte cap — shrink it before handing in`,
+      );
+    }
+  }
   mkdirSync(join(outDir, 'screenshots'), { recursive: true });
   cpSync(shotsDir, join(outDir, 'screenshots'), { recursive: true });
 }
